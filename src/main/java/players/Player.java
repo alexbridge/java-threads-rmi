@@ -1,86 +1,90 @@
 package players;
 
 import messages.Message;
-import messages.MessageExchanger;
+import messages.MessageQueue;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.io.IOException;
 
-public class Player implements Runnable {
+public class Player {
     private final String playerId;
-    private final MessageExchanger messageExchanger;
-    private final AtomicInteger messagesSent = new AtomicInteger(0);
+    private final MessageQueue messageIn;
+    private final MessageQueue messageOut;
 
     private int messagesToSend;
 
-    public Player(String playerId, MessageExchanger messageExchanger, int messagesToSend) {
+    public Player(String playerId, MessageQueue messageIn, MessageQueue messageOut) {
         this.playerId = playerId;
-        this.messageExchanger = messageExchanger;
-        this.messagesToSend = messagesToSend;
+        this.messageIn = messageIn;
+        this.messageOut = messageOut;
     }
 
-    public Player(String playerId, MessageExchanger messageExchanger) {
-        this.playerId = playerId;
-        this.messageExchanger = messageExchanger;
-    }
-
-    @Override
-    public void run() {
-
-        THREAD_LOOP:
-        while (true) {
-            if (Thread.interrupted()) {
-                // Interrupted outside of a thread
-                break;
-            }
-
-            Message message = null;
-
+    public void sendMessages(String toPlayerId, final int messagesToSend) {
+        new Thread(() -> {
+            int messagesSent = 0;
+            int leftMessages = messagesToSend;
+            Message message = new Message(this.playerId, "message");
             try {
-                if (this.messagesToSend > 0) {
-                    // Messages producer
-                    message = new Message("message 0");
-                    do {
-                        message = this.messageExchanger.exchange(message);
-                        if (message == Message.ALIVE) {
-                            continue;
-                        }
-
-                        System.out.println(
-                                "Player 1: <- Player 2: " + message.getMessage()
-                        );
-
-                        message = new Message(message.getMessage() + " " + this.messagesSent.incrementAndGet());
-                        this.messagesToSend--;
-                    } while (this.messagesToSend > 0);
-
-                    // Finish conversation by sending silent message
-                    this.messageExchanger.exchange(Message.BYE);
-                    // Break main thread loop
-                    break;
-                } else {
-                    // Messages consumer
-                    message = Message.ALIVE;
-                    while (true) {
-                        message = this.messageExchanger.exchange(message);
-                        if (message == Message.ALIVE) {
-                            continue;
-                        }
-
-                        if (message == Message.BYE) {
-                            break THREAD_LOOP;
-                        }
-
-                        System.out.println(
-                                "Player 1: " + message.getMessage() + " -> Player 2"
-                        );
-
-                        message = new Message(message.getMessage() + " " + this.messagesSent.incrementAndGet());
+                do {
+                    if (Thread.interrupted()) {
+                        // Interrupted outside of a thread
+                        break;
                     }
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                break;
+                    /*messageOut.put(
+                            new Message(this.playerId, message.getMessage() + " " +  messagesSent++)
+                    );*/
+                    MessageQueue.sendNetworkMessage(
+                            messageOut.getBucketId(),
+                            new Message(this.playerId, message.getMessage() + " " +  messagesSent++)
+                    );
+                    leftMessages--;
+
+                    // block until a request arrives
+                    message = messageIn.take();
+
+                    System.out.println(
+                            this.playerId + " <- " + toPlayerId + ": \"" + message.getMessage() + "\""
+                    );
+                } while (leftMessages > 0);
+
+                messageOut.put(Message.BYE);
+            } catch (InterruptedException | IOException ie) {
+                ie.printStackTrace();
             }
-        }
+        }).start();
+    }
+
+    public void listenMessages() {
+        new Thread(() -> {
+            Message message;
+            int messagesSent = 0;
+            while (true) {
+                if (Thread.interrupted()) {
+                    // Interrupted outside of a thread
+                    break;
+                }
+
+                try {
+                    // block until a request arrives
+                    message = messageIn.take();
+                    if (message == Message.BYE) {
+                        break;
+                    }
+
+                    System.out.println(
+                            message.getPlayerId() + ": \"" + message.getMessage() +  "\" -> " + this.playerId
+                    );
+
+                    /*messageOut.put(
+                            new Message(message.getMessage() + " " + ++messagesSent)
+                    );*/
+                    MessageQueue.sendNetworkMessage(
+                            messageOut.getBucketId(),
+                            new Message(message.getMessage() + " " + ++messagesSent)
+                    );
+                } catch (InterruptedException | IOException ie) {
+                    ie.printStackTrace();
+                }
+            }
+        }).start();
     }
 }
