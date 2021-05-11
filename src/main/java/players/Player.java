@@ -3,8 +3,6 @@ package players;
 import messages.Message;
 import messages.MessageQueue;
 
-import java.io.IOException;
-
 public class Player {
     private final String playerId;
     private final MessageQueue messageIn;
@@ -29,11 +27,7 @@ public class Player {
                         // Interrupted outside of a thread
                         break;
                     }
-                    /*messageOut.put(
-                            new Message(this.playerId, message.getMessage() + " " +  messagesSent++)
-                    );*/
-                    MessageQueue.sendNetworkMessage(
-                            messageOut.getBucketId(),
+                    messageOut.put(
                             new Message(this.playerId, message.getMessage() + " " +  messagesSent++)
                     );
                     leftMessages--;
@@ -47,7 +41,7 @@ public class Player {
                 } while (leftMessages > 0);
 
                 messageOut.put(Message.BYE);
-            } catch (InterruptedException | IOException ie) {
+            } catch (InterruptedException ie) {
                 ie.printStackTrace();
             }
         }).start();
@@ -74,14 +68,10 @@ public class Player {
                             message.getPlayerId() + ": \"" + message.getMessage() +  "\" -> " + this.playerId
                     );
 
-                    /*messageOut.put(
-                            new Message(message.getMessage() + " " + ++messagesSent)
-                    );*/
-                    MessageQueue.sendNetworkMessage(
-                            messageOut.getBucketId(),
+                    messageOut.put(
                             new Message(message.getMessage() + " " + ++messagesSent)
                     );
-                } catch (InterruptedException | IOException ie) {
+                } catch (InterruptedException ie) {
                     ie.printStackTrace();
                 }
             }
