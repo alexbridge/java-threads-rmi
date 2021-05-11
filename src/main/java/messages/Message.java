@@ -1,12 +1,16 @@
 package messages;
 
-import java.io.Serializable;
-
-public class Message implements Serializable {
+/**
+ * Simple POJO (message data container) used in players communications
+ */
+public class Message {
     private final String playerId;
     private final String message;
 
-    public static final Message BYE = new Message("0");
+    /**
+     * Predefined Message to gracefully stop conversation
+     */
+    public static final Message BYE = new Message("Bye!");
 
     public Message(String playerId, String message) {
         this.playerId = playerId;

@@ -4,11 +4,13 @@ import messages.MessageQueue;
 import players.Player;
 
 /**
- * Example for 2 messages
- * player 1: "message 0" -> player2
- * player 1 <- player2: "message 0 1"
- * player 1: "message 0 1 1" -> player2
- * player 1 <- player2: "message 0 1 1 2"
+ * Example outcome for 2 messages conversation
+ * <pre>{@code
+ *     player 1: "message 0" -> player2
+ *     player 1 <- player2: "message 0 1"
+ *     player 1: "message 0 1 1" -> player2
+ *     player 1 <- player2: "message 0 1 1 2"
+ * }</pre>
  */
 public class Application {
     private static final MessageQueue requests = new MessageQueue();
@@ -24,10 +26,10 @@ public class Application {
             }
         }
 
-        Player initiator = new Player("Player 1", requests, replies);
-        Player collocutor = new Player("Player 2", replies, requests);
+        Player player1 = new Player("Player 1");
+        Player player2 = new Player("Player 2");
 
-        collocutor.listenMessages();
-        initiator.sendMessages("Player 2", initiatorMessagesLimit);
+        player2.listenMessages(replies, requests);
+        player1.sendMessages("Player 2", requests, replies, initiatorMessagesLimit);
     }
 }
