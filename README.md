@@ -8,4 +8,3 @@ You can start from cli (see [Makefile](./Makefile) recipes):
 
 - build project `make build`
 - run `make run`
-- build and run `make build-run`

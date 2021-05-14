@@ -1,31 +1,39 @@
 package messages;
 
+import java.io.Serializable;
+
 /**
  * Simple POJO (message data container) used in players communications
  */
-public class Message {
-    private final String playerId;
-    private final String message;
+public class Message implements Serializable {
+    private final String playerName;
+    private final String request;
+    private String response;
 
     /**
      * Predefined Message to gracefully stop conversation
      */
-    public static final Message BYE = new Message("Bye!");
+    public static final Message BYE = new Message(null, "Bye!");
 
-    public Message(String playerId, String message) {
-        this.playerId = playerId;
-        this.message = message;
+    public Message(String playerName, String request) {
+        this.playerName = playerName;
+        this.request = request;
     }
 
-    public Message(String message) {
-        this(null, message);
+    public String getPlayerName() {
+        return playerName;
     }
 
-    public String getMessage() {
-        return message;
+    public String getRequest() {
+        return request;
     }
 
-    public String getPlayerId() {
-        return playerId;
+    public String getResponse() {
+        return response;
+    }
+
+    public Message setResponse(String response) {
+        this.response = response;
+        return this;
     }
 }

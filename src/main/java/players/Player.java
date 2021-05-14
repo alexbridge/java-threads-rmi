@@ -1,106 +1,62 @@
 package players;
 
 import messages.Message;
-import messages.MessageQueue;
+import messages.MessageAcceptor;
 
-/**
- * Player class represent bi-directional direct communication between players.
- * Message queues that are used as incoming/outgoing messages of first player
- * should be flipped fo second player (what is outgoing of first player, that is
- * incoming for second user)
- *
- * Player can:
- * - start sending messages to other player
- * - listen for incoming messages from other player
- *
- * <p>
- *  <b>Sample Usage</b>
- *  <pre> {@code
- *      Player player1 = new Player("Player 1");
- *      Player player2 = new Player("Player 2", <MessageQueue>, <MessageQueue>);
- *
- *      player2.listenMessages(<MessageQueue>, <MessageQueue>);
- *      player1.sendMessages("Player 2", <MessageQueue>, <MessageQueue>, 2);
- *  }</pre>
- */
-public class Player {
+import java.rmi.RemoteException;
+
+public class Player implements MessageAcceptor {
     private final String playerId;
+    private final String playerName;
+    private PlayerStatus status = PlayerStatus.ACTIVE;
+    private int messagesCount = 0;
 
-    public Player(String playerId) {
+    public Player(String playerId, String playerName) {
         this.playerId = playerId;
+        this.playerName = playerName;
     }
 
-    /**
-     * Start communication to given player (initiator player)
-     */
-    public void sendMessages(String toPlayerId, MessageQueue messageIn, MessageQueue messageOut, final int messagesToSend) {
-        new Thread(() -> {
-            int messagesSent = 0;
-            int leftMessages = messagesToSend;
-
-            // Initial message to send
-            Message message = new Message(this.playerId, "message");
-            try {
-                do {
-                    if (Thread.interrupted()) {
-                        // Interrupted outside of a thread
-                        break;
-                    }
-                    // Send a message to outgoing queue
-                    messageOut.put(
-                            new Message(this.playerId, message.getMessage() + " " +  messagesSent++)
-                    );
-                    leftMessages--;
-
-                    // Wait message in incoming queue
-                    message = messageIn.take();
-
-                    System.out.println(
-                            this.playerId + " <- " + message.getPlayerId() + ": \"" + message.getMessage() + "\""
-                    );
-                } while (leftMessages > 0);
-
-                // Notify other player that communication is done
-                messageOut.put(Message.BYE);
-            } catch (InterruptedException ie) {
-                ie.printStackTrace();
-            }
-        }).start();
+    public String getPlayerId() {
+        return playerId;
     }
 
-    /**
-     * Start listening for incoming messages from initiator player
-     */
-    public void listenMessages(MessageQueue messageIn, MessageQueue messageOut) {
-        new Thread(() -> {
-            Message message;
-            int messagesSent = 0;
-            while (true) {
-                if (Thread.interrupted()) {
-                    // Interrupted outside of a thread
-                    break;
-                }
+    public String getPlayerName() {
+        return playerName;
+    }
 
-                try {
-                    // Wait a message in incoming queue
-                    message = messageIn.take();
-                    if (message == Message.BYE) {
-                        // Stop a Thread since communication is finished
-                        break;
-                    }
+    public PlayerStatus getStatus() {
+        return status;
+    }
 
-                    System.out.println(
-                            message.getPlayerId() + ": \"" + message.getMessage() +  "\" -> " + this.playerId
-                    );
+    public Message acceptMessage(Message message) {
+        if (message.getRequest().equals(Message.BYE.getRequest())) {
+            this.status = PlayerStatus.IDLE;
+            return message;
+        }
 
-                    // Send a message to outgoing queue
-                    messageOut.put(
-                            new Message(this.playerId, message.getMessage() + " " + ++messagesSent)
-                    );
-                } catch (InterruptedException ie) {
-                    ie.printStackTrace();
-                }
-            }
-        }).start();
+        message.setResponse(message.getRequest() + " " + ++messagesCount);
+
+        System.out.println(
+                message.getPlayerName() + " <- " + this.playerId + ": \"" + message.getResponse() + "\""
+        );
+
+        return message;
+    }
+
+    public void startConversation(String playerName, MessageAcceptor player, int messagesToSend) throws RemoteException {
+        Message message = new Message(this.playerName, "message " + messagesCount);
+        for (int i = 0; i < messagesToSend; i++) {
+            System.out.println(
+                    this.playerName + ": \"" + message.getRequest() +  "\" -> " + playerName
+            );
+
+            message = player.acceptMessage(message);
+
+            message = new Message(this.playerName, message.getResponse() + " " + ++messagesCount);
+        }
+
+        player.acceptMessage(Message.BYE);
+
+        this.status = PlayerStatus.IDLE;
     }
 }
