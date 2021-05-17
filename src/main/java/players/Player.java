@@ -1,11 +1,11 @@
 package players;
 
 import messages.Message;
-import messages.MessageAcceptor;
+import messages.Interlocutor;
 
 import java.rmi.RemoteException;
 
-public class Player implements MessageAcceptor {
+public class Player implements Interlocutor {
     private final String playerId;
     private final String playerName;
     private PlayerStatus status = PlayerStatus.ACTIVE;
@@ -43,7 +43,7 @@ public class Player implements MessageAcceptor {
         return message;
     }
 
-    public void startConversation(String playerName, MessageAcceptor player, int messagesToSend) throws RemoteException {
+    public void startConversation(String playerName, Interlocutor player, int messagesToSend) throws RemoteException {
         Message message = new Message(this.playerName, "message " + messagesCount);
         for (int i = 0; i < messagesToSend; i++) {
             System.out.println(

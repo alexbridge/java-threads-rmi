@@ -17,7 +17,7 @@ run-players: start-rmi
 	echo Starting Player 2
 	java -jar target/360t-messages-1.0.0-SNAPSHOT.jar "Player 2"
 
-run: build start-rmi run-players kill-rmi
+run: start-rmi run-players kill-rmi
 
 build-run: build run
 

@@ -1,6 +1,6 @@
 package cli;
 
-import messages.MessageAcceptor;
+import messages.Interlocutor;
 import players.PlayerStatus;
 
 import java.rmi.*;
@@ -8,7 +8,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
-public class Player {
+public class RmiClientPlayer {
     private static Registry registry;
 
     public static void main(String[] args) throws AlreadyBoundException, RemoteException {
@@ -53,11 +53,11 @@ public class Player {
 
         players.Player player = initPlayer(args[0]);
 
-        MessageAcceptor collocutor = null;
+        Interlocutor collocutor = null;
         String player2 = playerId(args[1]);
         do {
             try {
-                collocutor = (MessageAcceptor) registry.lookup(player2);
+                collocutor = (Interlocutor) registry.lookup(player2);
             } catch (NotBoundException ignore) {}
         } while (collocutor == null);
 
