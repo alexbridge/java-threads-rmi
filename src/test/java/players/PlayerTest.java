@@ -21,12 +21,11 @@ public class PlayerTest
      */
     @Test
     public void shouldSendMessages() throws InterruptedException {
-        MessageQueue incoming = mock(MessageQueue.class);
-        MessageQueue outgoing = mock(MessageQueue.class);
+        MessageQueue messageQueue = mock(MessageQueue.class);
 
         ArgumentCaptor<Message> captor = ArgumentCaptor.forClass(Message.class);
 
-        when(incoming.take()).thenReturn(
+        when(messageQueue.take()).thenReturn(
                 // Mimic player 2
                 new Message("Player 2", "message 0 1")
         ).thenReturn(
@@ -36,11 +35,11 @@ public class PlayerTest
 
 
         Player player = new Player("Player 1");
-        player.sendMessages("Player 2", incoming, outgoing, 2);
+        player.sendMessages("Player 2", messageQueue, 2);
 
         Thread.sleep(100);
 
-        verify(outgoing, times(3)).put(captor.capture());
+        verify(messageQueue, times(3)).put(captor.capture());
 
         List<Message> captured = captor.getAllValues();
 
@@ -57,13 +56,12 @@ public class PlayerTest
      * Test receiving messages
      */
     @Test
-    public void shouldReceiveMessages() throws InterruptedException {
-        MessageQueue incoming = mock(MessageQueue.class);
-        MessageQueue outgoing = mock(MessageQueue.class);
+    public void shouldListenMessages() throws InterruptedException {
+        MessageQueue messageQueue = mock(MessageQueue.class);
 
         ArgumentCaptor<Message> captor = ArgumentCaptor.forClass(Message.class);
 
-        when(incoming.take()).thenReturn(
+        when(messageQueue.take()).thenReturn(
                 // Mimic player 1
                 new Message("Player 1", "message 0")
         ).thenReturn(
@@ -72,12 +70,12 @@ public class PlayerTest
         ).thenReturn(Message.BYE);
 
         Player player = new Player("Player 2");
-        player.listenMessages(incoming, outgoing);
+        player.listenMessages(messageQueue);
 
         Thread.sleep(100);
 
-        verify(incoming, times(3)).take();
-        verify(outgoing, times(2)).put(captor.capture());
+        verify(messageQueue, times(3)).take();
+        verify(messageQueue, times(2)).put(captor.capture());
 
         List<Message> captured = captor.getAllValues();
 

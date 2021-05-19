@@ -33,7 +33,7 @@ public class Player {
     /**
      * Start communication to given player (initiator player)
      */
-    public void sendMessages(String toPlayerId, MessageQueue messageIn, MessageQueue messageOut, final int messagesToSend) {
+    public void sendMessages(String toPlayerId, MessageQueue messageQueue, final int messagesToSend) {
         new Thread(() -> {
             int messagesSent = 0;
             int leftMessages = messagesToSend;
@@ -47,13 +47,13 @@ public class Player {
                         break;
                     }
                     // Send a message to outgoing queue
-                    messageOut.put(
+                    messageQueue.put(
                             new Message(this.playerId, message.getMessage() + " " +  messagesSent++)
                     );
                     leftMessages--;
 
                     // Wait message in incoming queue
-                    message = messageIn.take();
+                    message = messageQueue.take();
 
                     System.out.println(
                             this.playerId + " <- " + message.getPlayerId() + ": \"" + message.getMessage() + "\""
@@ -61,7 +61,7 @@ public class Player {
                 } while (leftMessages > 0);
 
                 // Notify other player that communication is done
-                messageOut.put(Message.BYE);
+                messageQueue.put(Message.BYE);
             } catch (InterruptedException ie) {
                 ie.printStackTrace();
             }
@@ -71,7 +71,7 @@ public class Player {
     /**
      * Start listening for incoming messages from initiator player
      */
-    public void listenMessages(MessageQueue messageIn, MessageQueue messageOut) {
+    public void listenMessages(MessageQueue messageQueue) {
         new Thread(() -> {
             Message message;
             int messagesSent = 0;
@@ -83,7 +83,7 @@ public class Player {
 
                 try {
                     // Wait a message in incoming queue
-                    message = messageIn.take();
+                    message = messageQueue.take();
                     if (message == Message.BYE) {
                         // Stop a Thread since communication is finished
                         break;
@@ -94,7 +94,7 @@ public class Player {
                     );
 
                     // Send a message to outgoing queue
-                    messageOut.put(
+                    messageQueue.put(
                             new Message(this.playerId, message.getMessage() + " " + ++messagesSent)
                     );
                 } catch (InterruptedException ie) {

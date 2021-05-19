@@ -13,8 +13,7 @@ import players.Player;
  * }</pre>
  */
 public class Application {
-    private static final MessageQueue requests = new MessageQueue();
-    private static final MessageQueue replies = new MessageQueue();
+    private static final MessageQueue messageQueue = new MessageQueue();
 
     public static void main(String[] args) {
         int initiatorMessagesLimit = 2;
@@ -29,7 +28,7 @@ public class Application {
         Player player1 = new Player("Player 1");
         Player player2 = new Player("Player 2");
 
-        player2.listenMessages(replies, requests);
-        player1.sendMessages("Player 2", requests, replies, initiatorMessagesLimit);
+        player2.listenMessages(messageQueue);
+        player1.sendMessages("Player 2", messageQueue, initiatorMessagesLimit);
     }
 }
